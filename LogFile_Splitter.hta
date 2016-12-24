@@ -1,0 +1,203 @@
+<html>
+<head>
+<title>Vbscript File Splitter</title>
+
+<HTA:APPLICATION 
+     ID="SplitterCLI"
+     APPLICATIONNAME="SplittingIT"
+     SCROLL="yes"
+     SINGLEINSTANCE="yes"
+</head>
+
+<SCRIPT Language="VBScript">
+Public resultName
+
+Sub Window_Onload
+	self.Focus()
+	self.ResizeTo 610,250
+End Sub
+
+Sub ChooseSaveFolder
+	'strStartDir = 17
+	strStartDir = 0
+	PickFolder(strStartDir)
+	'Set m = resultNameNow()
+	'resultName = m.name	
+End Sub
+
+class filingName
+	public name
+end class 
+
+Function resultNameNow ()
+	dim m
+	set m = new filingName
+	If Len (month(now)) < 2 Then
+		monthly = "0" & (month(now))
+	Else
+		monthly = (month(now))
+	End If
+
+	If Len (day(now)) < 2 Then
+		dayly = "0" & (day(now))
+	Else
+		dayly = (day(now))
+	End If
+
+	If Len (hour(now)) < 2 Then
+		hourly = "0" & (hour(now))
+	Else
+		hourly = (hour(now))
+	End If
+
+	If Len (minute(now)) < 2 Then
+		minutely = "0" & (minute(now))
+	Else
+		minutely = (minute(now))
+	End If
+
+	If Len (second(now)) < 2 Then
+		secondly = "0" & (second(now))
+	Else
+		secondly = (second(now))
+	End If
+	m.name = "Logfile_Split_" & year(now) & monthly & dayly & "_" & hourly & minutely & secondly
+	set resultNameNow = m
+End Function
+
+Function PickFolder(strStartDir)
+	Dim objShell, objFS
+	Set objShell = CreateObject("Shell.Application")
+	Set objFS = objShell.BrowseForFolder(0, "Choose the folder where the files are to be split.", 0, strStartDir)
+		If (Not objFS Is Nothing) Then
+			PickFolder = objFS.Items.Item.path
+				If Instr (PickFolder, "::") > 0 Then
+					msgbox ("Please select a folder.")
+					Location.Reload(True)
+					Exit Function
+				End If 
+			ListFiles(PickFolder)
+		ElseIf Len(TypeName(objFS)) > 5 Then
+			Location.Reload(True)
+			Exit Function		
+		End If
+	Set objFS = Nothing
+	Set objShell = Nothing
+End Function
+
+Function ListFiles(objPath)
+	Dim objFolder, objFso, objFile
+	Set objFso = CreateObject("Scripting.FileSystemObject")
+	Set oShell = CreateObject("WScript.Shell")
+	sTemp = oShell.ExpandEnvironmentStrings("%TEMP%")
+	'sTempFile = sTemp & "\" & objFso.GetTempName
+	sTempFile = objFso.GetTempName
+	Const ForReading = 1, ForWriting = 2, ForAppending = 8, OpenAsDefault = -2, FailIfNotExist = 0	
+	Set m = resultNameNow()
+	resultName = m.name
+	Set fFile = objFso.OpenTextFile(sTempFile, ForAppending, True, OpenAsDefault)
+ 
+
+	Set objFolder = objFso.GetFolder(objPath)
+		For each objFile in objFolder.Files
+			If (objFolder.Files.Count > 0 AND  LCase (objFso.GetExtensionName (objFile)) = "txt") OR (objFolder.Files.Count > 0 AND  LCase (objFso.GetExtensionName (objFile)) = "csv") OR (objFolder.Files.Count > 0 AND  LCase (objFso.GetExtensionName (objFile)) = "log")Then
+					'msgbox objFile.Name & VBCR & objFile.Size
+					Set objTextFile = objFso.OpenTextFile (objFile, ForReading, False,OpenAsDefault)
+					Do Until objTextFile.AtEndOfStream
+						If objFile.Size < 180000000 Then					
+							strLine = objTextFile.ReadAll
+							fFile.Write strLine
+						Else
+							strLine = objTextFile.ReadLine
+							fFile.Writeline strLine							
+						End If
+					Loop
+					objTextFile.close
+			End If				
+		Next
+	fFile.Close
+	
+	Set objTextFile = objFso.OpenTextFile (sTempFile, ForReading, False,OpenAsDefault)
+	linesCounts = linesPerFile.fname.value
+		Counter = 0
+		fileOutputCount = 0
+		Set objOutTextFile = Nothing		 
+		Do Until objTextFile.AtEndOfStream
+			if Counter = 0 Or Counter = linesCounts/1 Then
+				Counter = 0
+				fileOutputCount = fileOutputCount + 1
+				Select Case Len(fileOutputCount)
+				Case 1
+					linesNumAppend = "00000" & fileOutputCount
+				Case 2
+					linesNumAppend = "0000" & fileOutputCount
+				Case 3
+					linesNumAppend = "000" & fileOutputCount
+				Case 4
+					linesNumAppend = "00" & fileOutputCount
+				Case 5
+					linesNumAppend = "0" & fileOutputCount
+				Case Else
+					linesNumAppend = fileOutputCount
+				End Select
+							
+				if Not objOutTextFile is Nothing then objOutTextFile.Close
+				Set objOutTextFile = objFSO.OpenTextFile( resultName & "_" & linesNumAppend & ".txt", ForWriting, True)
+			end if
+			strNextLine = objTextFile.Readline
+			objOutTextFile.WriteLine(strNextLine)
+			Counter = Counter + 1
+		Loop
+		objTextFile.Close
+		objOutTextFile.Close
+		fFile.close
+		objFso.DeleteFile sTempFile		
+	
+	Set objFolder = Nothing
+	Set objFso = Nothing
+	Set objFile = Nothing
+	
+	DataArea.InnerHtml = "Script completed. <br>Refer to generated file/s : " &  resultName & "_xxxxx.txt" 
+
+End Function
+
+
+Sub RunReload
+    Location.Reload(True)
+End Sub
+
+Function LogOff()
+	window.close
+End Function
+
+</SCRIPT>
+
+<body>
+<!--<input type="radio" name="gender" value="male">--> <form name="linesPerFile">Split files by number of  <input type="text" name="fname" size="8" value = 999999>  lines each.</form>
+<!--<input type="radio" name="gender" value="female"> Split files equally into  <input type="text" name="fname" size="8">  parts.<br>-->
+Browse to the folder of text-readable file to be split. <br>
+<input type = "button" value = "Browse Folder" style="width:100px;height:25px" onClick="ChooseSaveFolder" title="Select folder where text readable file is kept. All files will be merge as one text pool."> 
+<input type="button" style="width:100px;height:25px" value="Quit" onClick="Logoff()" title="Close this window.">
+<input type="button" style="width:100px;height:25px" value="Reset" onClick="RunReload()" title="Reset this window.">
+<br>
+
+<br>
+
+
+<hr></hr>
+<Span Id = "DataArea"></Span>
+<!-- 
+INCLUDE string<br>
+<TEXTAREA style="Height:100;Width:700;font-Size:12;font-weight:normal;TITLE=""; NAME="INCLUDING"; WRAP=hard>
+text1
+text2</TEXTAREA>
+<br>
+<br>
+EXCLUDE string<br>
+<TEXTAREA style="Height:100;Width:700;font-Size:12;font-weight:normal;TITLE=""; NAME="EXCLUDING"; WRAP=hard>
+exclude this string text 1
+</TEXTAREA>
+-->
+
+</body>
+</html>

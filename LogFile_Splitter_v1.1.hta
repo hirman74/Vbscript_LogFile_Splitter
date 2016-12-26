@@ -116,10 +116,10 @@ Function ListFiles(objPath)
 	Set objFolder = objFso.GetFolder(objPath)
 		For each typeFiles in fileLists
 			If Instr(typeFiles,".") > 0 Then
-				fileExt = Replace (typeFiles,".","")
+				typeFiles = Replace (typeFiles,".","")
 			End If
 			For each objFile in objFolder.Files		
-				If (objFolder.Files.Count > 0 AND  LCase (objFso.GetExtensionName (objFile)) = Lcase(fileExt)) Then
+				If (objFolder.Files.Count > 0 AND  LCase (objFso.GetExtensionName (objFile)) = Lcase(typeFiles)) Then
 						'msgbox objFile.Name & VBCR & objFile.Size
 						Set objTextFile = objFso.OpenTextFile (objFile, ForReading, False,OpenAsDefault)
 						Do Until objTextFile.AtEndOfStream
@@ -169,7 +169,6 @@ Function ListFiles(objPath)
 			Counter = Counter + 1
 		Loop
 		objTextFile.Close
-		objOutTextFile.Close
 		fFile.close
 		objFso.DeleteFile sTempFile		
 	

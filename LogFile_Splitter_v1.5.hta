@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Vbscript File Splitter</title>
+
+<HTA:APPLICATION 
+     ID="SplitterCLI"
+     APPLICATIONNAME="SplittingIT"
+	SCROLL="yes"
+	SINGLEINSTANCE="yes"
+	maximizeButton="no" 
+	minimizeButton="yes" 
+	showInTaskbar="yes" 
+	caption = "no"
+	BORDERSTYLE="raised"
+	BORDER="thick"
+>
+</head>
+
+<SCRIPT Language="VBScript">
+Public resultName
+Const ForReading = 1, ForWriting = 2, ForAppending = 8, OpenAsDefault = -2, FailIfNotExist = 0
+
+
+Sub Window_Onload
+	self.Focus()
+	self.ResizeTo 610,400
+End Sub
+Sub RunReload
+    Location.Reload(True)
+End Sub
+Function LogOff()
+		Dim objWMIService, objProcess, colProcess
+		Dim strComputer, strProcessKill 
+		strComputer = "."
+		strProcessKill = "'mshta.exe'"
+		Set objWMIService = GetObject("winmgmts:{impersonationLevel=impersonate}!\\" & strComputer & "\root\cimv2") 
+		Set colProcess = objWMIService.ExecQuery ("Select * from Win32_Process Where Name = " & strProcessKill )
+		For Each objProcess in colProcess
+			objProcess.Terminate()
+		Next 
+		WScript.Quit 
+	window.close
+End Function
+
+Sub ChooseSubfolder
+	DataArea.InnerHtml = ""
+	Dim WshShell
+	Set WshShell = CreateObject("WScript.Shell")
+		strStartDir = WshShell.CurrentDirectory
+		Call PickFolder(strStartDir)
+	Set WshShell = Nothing
+End Sub
+
+Sub ChooseWholePC
+	DataArea.InnerHtml = ""
+	strStartDir = 17
+	'strStartDir = 0
+	Call PickFolder(strStartDir)
+End Sub
+
+class filingName
+	public name
+end class 
+
+Function resultNameNow ()
+	dim m
+	set m = new filingName
+	If Len (month(now)) < 2 Then
+		monthly = "0" & (month(now))
+	Else
+		monthly = (month(now))
+	End If
+
+	If Len (day(now)) < 2 Then
+		dayly = "0" & (day(now))
+	Else
+		dayly = (day(now))
+	End If
+
+	If Len (hour(now)) < 2 Then
+		hourly = "0" & (hour(now))
+	Else
+		hourly = (hour(now))
+	End If
+
+	If Len (minute(now)) < 2 Then
+		minutely = "0" & (minute(now))
+	Else
+		minutely = (minute(now))
+	End If
+
+	If Len (second(now)) < 2 Then
+		secondly = "0" & (second(now))
+	Else
+		secondly = (second(now))
+	End If
+	m.name = "Logfile_Split_" & year(now) & monthly & dayly & "_" & hourly & minutely & secondly
+	set resultNameNow = m
+End Function
+
+Function PickFolder(strStartDir) 'Open the browse folder window
+	Dim objShell, objFS
+	Set objShell = CreateObject("Shell.Application")
+	Set objFS = objShell.BrowseForFolder(0, "Choose the folder where the files are to be split.", 0, strStartDir)
+		If (Not objFS Is Nothing) Then
+			PickFolder = objFS.Items.Item.path
+				If Instr (PickFolder, "::") > 0 Then
+					msgbox ("Please select a folder.")
+					Location.Reload(True)
+					Exit Function
+				End If 
+			Call ListFiles(PickFolder)
+		ElseIf Len(TypeName(objFS)) > 5 Then
+			Location.Reload(True)
+			Exit Function		
+		End If
+	Set objFS = Nothing
+	Set objShell = Nothing
+End Function
+
+Function ListFiles(objPath) 'Adding list files into drop down file names.
+	Dim objFolder, objFile, objOption, fileTypes, fileLists
+	Set objFso = CreateObject("Scripting.FileSystemObject")
+	window.document.getElementById("eachFileName").innerHTML = ""	
+	fileTypes = linesPerFile.fileTypes.value
+	fileLists = Split (fileTypes,vbCRLF)	
+	Set objFolder = objFso.GetFolder(objPath)	
+		For each typeFiles in fileLists
+			If Instr(typeFiles,".") > 0 Then
+				typeFiles = Replace (typeFiles,".","")
+			End If			
+			For each objFile in objFolder.Files		
+				If (objFolder.Files.Count > 0 AND  LCase (objFso.GetExtensionName (objFile)) = Lcase(typeFiles)) Then
+						Set objOption = window.document.createElement("option")
+						objOption.value = objFile
+						objOption.text = objFile.name
+						window.document.getElementById("eachFileName").add(objOption)
+				End If
+			Next
+		Next
+		Set objOption = window.document.createElement("option")
+		objOption.value = objPath
+		objOption.text = "Merge all into single pool."
+		window.document.getElementById("eachFileName").add(objOption)	
+		window.location.hash = "#eachFileName"
+	Set objFolder = Nothing
+	Set objFile = Nothing
+	Set objOption = Nothing	
+	Set fileTypes = Nothing
+	Set fileLists = Nothing
+	Set objFso = Nothing
+End Function
+
+Function parse2TempFile(objFile, sTempFile) 'Reading each list files into tmp file.	
+	Dim fFile, objTextFile, fsSize, strLine
+	Set objFso = CreateObject("Scripting.FileSystemObject")
+	Set fFile = objFso.OpenTextFile("./" & sTempFile, ForAppending, True, OpenAsDefault)	
+	Set objTextFile = objFso.OpenTextFile (objFile, ForReading, False,OpenAsDefault)
+	Set fsSize = objFso.GetFile(objFile)
+	Do Until objTextFile.AtEndOfStream
+				Set oShell = CreateObject("WScript.Shell")
+				cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+				oShell.Run cmd,0,1	
+				'sTemp = oShell.ExpandEnvironmentStrings("%TEMP%")
+				DataArea.InnerHtml = "Temp file: " & sTempFile & "<br>Reading " & fsSize.name & " and writing to temp file"
+				cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+				oShell.Run cmd,0,1	
+				Set oShell = Nothing
+		If fsSize.Size < 180000000 Then					
+			strLine = objTextFile.ReadAll
+			fFile.Write strLine
+		Else
+			strLine = objTextFile.ReadLine
+			fFile.Writeline strLine							
+		End If
+	Loop
+	objTextFile.close
+	fFile.close
+	Set fFile = Nothing
+	Set objTextFile = Nothing
+	Set fsSize = Nothing
+	Set strLine = Nothing
+	Set objFso = Nothing	
+End Function
+
+Function parseTemp2Output(tempFile, resultName) 'Reading tmp file.
+	Dim objTextFile, linesCounts, Counter, fileOutputCount, objOutTextFile, strNextLine
+	Set objFso = CreateObject("Scripting.FileSystemObject")
+	Set objTextFile = objFso.OpenTextFile ("./" & tempFile, ForReading, False,OpenAsDefault)		
+		linesCounts = linesPerFile.fname.value
+		Counter = 0
+		fileOutputCount = 0
+		Set objOutTextFile = Nothing		
+		Do Until objTextFile.AtEndOfStream
+			If Counter = 0 Or Counter = linesCounts/1 Then
+				Counter = 0
+				fileOutputCount = fileOutputCount + 1
+					Select Case Len(fileOutputCount)
+					Case 1
+						linesNumAppend = "00000" & fileOutputCount
+					Case 2
+						linesNumAppend = "0000" & fileOutputCount
+					Case 3
+						linesNumAppend = "000" & fileOutputCount
+					Case 4
+						linesNumAppend = "00" & fileOutputCount
+					Case 5
+						linesNumAppend = "0" & fileOutputCount
+					Case Else
+						linesNumAppend = fileOutputCount
+					End Select							
+				If Not objOutTextFile is Nothing then objOutTextFile.Close
+				Set objOutTextFile = objFSO.OpenTextFile("./" & resultName & "_" & linesNumAppend & ".txt", ForAppending, True)
+					Set oShell = CreateObject("WScript.Shell")
+					cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+					oShell.Run cmd,0,1	
+					DataArea.InnerHtml = "Temp file: " & tempFile & "<br>Reading temp file.<br>Wrting to split file/s: " & resultName & "_" & linesNumAppend & ".txt"
+					cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+					oShell.Run cmd,0,1
+					Set oShell = Nothing	
+			End If
+			strNextLine = objTextFile.Readline
+			objOutTextFile.WriteLine(strNextLine)
+			Counter = Counter + 1
+		Loop
+		objTextFile.Close
+		objFso.DeleteFile tempFile
+		Set objTextFile = Nothing
+		Set linesCounts = Nothing
+		Set Counter = Nothing
+		Set fileOutputCount = Nothing
+		Set strNextLine = Nothing
+		Set objFso = Nothing
+		'Clearing the select option
+		window.document.getElementById("eachFileName").innerHTML = ""
+		Set objOption = window.document.createElement("option")
+		objOption.value = ""
+		objOption.text = "Select"
+		window.document.getElementById("eachFileName").add(objOption)			
+End Function
+
+Sub RunHideScripts
+	If window.document.getElementById("goSubFolder").style.visibility ="hidden" Then
+		window.document.getElementById("goSubFolder").style.visibility = "visible"
+	Else
+		window.document.getElementById("goSubFolder").style.visibility="hidden"
+	End If
+	If window.document.getElementById("goFullFolder").style.visibility ="hidden" Then
+		window.document.getElementById("goFullFolder").style.visibility = "visible"
+	Else
+		window.document.getElementById("goFullFolder").style.visibility="hidden"
+	End If	
+	If window.document.getElementById("resetGlowWindow").style.visibility ="hidden" Then
+		window.document.getElementById("resetGlowWindow").style.visibility = "visible"
+	Else
+		window.document.getElementById("resetGlowWindow").style.visibility="hidden"
+	End If	
+	If window.document.getElementById("splittingButton").style.visibility ="hidden" Then
+		window.document.getElementById("splittingButton").style.visibility = "visible"
+	Else
+		window.document.getElementById("splittingButton").style.visibility="hidden"
+	End If	
+End Sub
+
+Sub selectSplitFiles 'Run the main process	
+	RunHideScripts
+	Dim objFso, oShell, objFolders, fileTypes, fileLists, sTempFile, resultName, fsName
+	Set objFso = CreateObject("Scripting.FileSystemObject")	
+	Set m = resultNameNow()
+	resultName = m.name
+	sTempFile = objFso.GetTempName
+	
+	If window.document.getElementById("eachFileName").Options.length = 1 Then
+		RunReload 
+		Exit Sub
+	End If
+	
+	For Each objOption In window.document.getElementById("eachFileName").Options	
+		fileTypes = linesPerFile.fileTypes.value
+		fileLists = Split (fileTypes,vbCRLF)		
+		For each typeFiles in fileLists
+			If Instr(typeFiles,".") > 0 Then
+				typeFiles = Replace (typeFiles,".","")
+			End If	
+			If objOption.Selected AND objOption.text = "Merge all into single pool." Then
+				objFolders = objOption.Value
+				Set objFolder = objFso.GetFolder(objFolders)			
+					For each objFileLing in objFolder.Files		
+						If (objFolder.Files.Count > 0 AND  LCase (objFso.GetExtensionName (objFileLing)) = Lcase(typeFiles)) Then
+							Set fsName = objFso.GetFile(objFileLing)
+								Set oShell = CreateObject("WScript.Shell")
+								cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+								oShell.Run cmd,0,1	
+								DataArea.InnerHtml = "Temp file: " & sTempFile & "<br>Reading " & fsName.name & " and writing to temp file"
+								cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+								oShell.Run cmd,0,1
+								Set oShell = Nothing
+							Set fsName = Nothing							
+							Call parse2TempFile(objFileLing, sTempFile)
+						End If
+					Next
+			ElseIf objOption.Selected Then 				
+					Set oShell = CreateObject("WScript.Shell")
+					cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+					oShell.Run cmd,0,1	
+					DataArea.InnerHtml = "Temp file: " & sTempFile & "<br>Reading " & objOption.text & " and writing to temp file"
+					cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+					oShell.Run cmd,0,1
+					Set oShell = Nothing
+				objFile = objOption.Value
+				Call parse2TempFile(objFile, sTempFile)
+			End If
+		Next
+	Next
+	Call parseTemp2Output(sTempFile, resultName)
+	Set objFolders = Nothing
+	Set fileTypes = Nothing
+	Set fileLists = Nothing
+	Set sTempFile = Nothing
+	Set objFso = Nothing
+	Set fsName = Nothing
+	
+	DataArea.InnerHtml = "Script completed. <br>Refer to generated file/s : " &  resultName & "_xxxxx.txt"
+	Set resultName = Nothing
+	RunHideScripts
+End Sub	
+
+
+</SCRIPT>
+<body style="background-color:#42f4c8;">
+<form name="linesPerFile">Type of files to split.<br>
+<TEXTAREA style="Height:70px;Width:90px;font-Size:12;font-weight:bold;background-color:pink;";TITLE=""; NAME="fileTypes"; WRAP=hard>
+.txt
+.csv
+.log</TEXTAREA><br>
+Split files by number of  <input type="text" name="fname" value="999999" style="background-color:yellow;width:100px;">  lines each.
+</form>
+Browse to the folder of text-readable file to be split.
+<br>
+<input type = "button" name="goSubFolder" value = "Browse Subfolder" style="width:120px;height:25px" onClick="ChooseSubfolder" title="Select folder where text readable file is kept. All files will be merge as one text pool."> 
+<input type = "button" name="goFullFolder" value = "Browse Whole PC" style="width:120px;height:25px" onClick="ChooseWholePC" title="Select folder where text readable file is kept. All files will be merge as one text pool."> 
+<br>
+<input type="button" style="width:120px;height:25px" value="Quit" onClick="Logoff()" title="Close this window.">
+<input type="button" name="resetGlowWindow" style="width:120px;height:25px" value="Reset" onClick="RunReload()" title="Reset this window.">
+<br>
+<hr></hr>
+Choose file to split: <select id="eachFileName" style="width:100%;">
+	<option value="" disabled selected>Select</option>
+ </select>
+<Span Id = "DataArea"></Span>
+<br>
+<input type="button" name="splittingButton" style="width:120px;height:25px" value="Split Files" onClick="selectSplitFiles" title="Split the selected file.">
+</body>
+</html>

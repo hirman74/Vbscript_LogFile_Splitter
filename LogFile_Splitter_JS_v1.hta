@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Vbscript File Splitter</title>
+
+<HTA:APPLICATION 
+     ID="SplitterCLI"
+     APPLICATIONNAME="SplittingIT"
+windowState="maximize"
+BORDER="yes" 
+BORDERSTYLE="normal"
+CAPTION="yes"
+CONTEXTMENU="no" 
+INNERBORDER="yes"
+MAXIMIZEBUTTON="yes"
+MINIMIZEBUTTON="yes" 
+NAVIGABLE="yes" 
+ICON=""
+SCROLL="yes"
+SCROLLFLAT="no" 
+SELECTION="yes"
+SHOWINTASKBAR="yes"
+SINGLEINSTANCE="yes" 
+SYSMENU="no"
+VERSION=""
+WINDOWSTATE="normal"	
+</head>
+
+<script language="javascript">
+	var objFso = new ActiveXObject("Scripting.FileSystemObject");
+	//var shellapp = new ActiveXObject("Shell.Application");
+	var objShell = new ActiveXObject("WScript.shell");
+	
+	function ListFilesJSs(PickFolderObject) {
+		var jsObjFolder, objFiles, checkboxList, labelList, fileListDiv;
+		fileListDiv = window.document.getElementById('fileListJS');
+			while (fileListDiv.hasChildNodes()) {   
+				fileListDiv.removeChild(fileListDiv.firstChild);
+			}
+		
+		jsObjFolder = objFso.GetFolder(PickFolderObject);		
+		   objFiles = new Enumerator(jsObjFolder.files);
+		   for (; !objFiles.atEnd(); objFiles.moveNext())
+		   {
+				checkboxList = window.document.createElement('input');
+				checkboxList.type = "checkbox";
+				checkboxList.name = objFiles.item();
+				checkboxList.value = objFiles.item();
+				checkboxList.id = objFiles.item();
+
+				labelList = document.createElement('label')
+				labelList.htmlFor = objFiles.item();
+				labelList.appendChild(window.document.createTextNode(objFiles.item().name));
+				
+				fileListDiv = window.document.getElementById('fileListJS');
+				fileListDiv.appendChild(checkboxList);
+				fileListDiv.appendChild(labelList);	
+				fileListDiv.appendChild(document.createElement("br"));
+		   }
+		if (window.document.checkboxTISFile.elements.length > 0) {
+			window.document.getElementById("splittingButton").style.visibility ="visible" 
+		}
+	}
+	function checkboxParser() {
+		var answer = confirm("Confirm to proceed?");
+		if (answer){} else {return;}
+
+		var typeElement, newFileName, arg00, arg01, arg02, arg03;
+		var checkboxesChecked = [];
+		var i, j, logFiles, strLines;
+		for (i = 0; i < window.document.checkboxTISFile.elements.length; i++ ) {
+			typeElement = checkboxTISFile.elements[i].type;
+			if (checkboxTISFile.elements[i].checked==true && typeElement=="checkbox") {
+				checkboxesChecked.push(checkboxTISFile.elements[i].name);
+			}
+		}
+		if (typeof(checkboxesChecked) !== 'undefined' && checkboxesChecked.length > 0) {
+				//sleepingVB();
+			for (i = 0; i < checkboxesChecked.length; i++ ) {
+				//selectSplitFiles(checkboxTISFile[i],stringFileArray[j]);
+				//logFiles = objFso.OpenTextFile(checkboxesChecked[i], 1,-2)
+				//strLines = logFiles.ReadAll();		
+				//alert (strLines.split(/\r\n|\r|\n/).length);
+				//alert (checkboxesChecked[i].replace(/^.*[\\\/]/, ''));
+				//alert (checkboxesChecked[i].replace(/^.*[\\\/]/, '').replace(/\.[^/.]+$/, ""));
+				if (objFso.FolderExists(checkboxesChecked[i].replace(/^.*[\\\/]/, '').replace(/\.[^/.]+$/, ""))) {
+				} else {
+					//objFso.CreateFolder (checkboxesChecked[i].replace(/^.*[\\\/]/, '').replace(/\.[^/.]+$/, ""));
+					objFso.CreateFolder (objFso.GetBaseName(checkboxesChecked[i]))
+					//alert (objFso.GetAbsolutePathName(checkboxesChecked[i]));
+					//alert (objFso.GetFileName(checkboxesChecked[i]));
+					//alert (objFso.GetBaseName(checkboxesChecked[i]));
+					//alert (objFso.GetParentFolderName(checkboxesChecked[i]));
+					createScriptFile(objFso.GetBaseName(checkboxesChecked[i]) );
+					//alert ('.\\' + objFso.GetBaseName(checkboxesChecked[i]) + '\\split_script.vbs ');
+					arg00 = objFso.GetBaseName(checkboxesChecked[i]);
+					arg01 = checkboxesChecked[i];
+					arg02 = objFso.GetFileName(checkboxesChecked[i]);
+					arg03 = window.document.getElementById('fLineName').value;
+					//objShell.run ('.\\' + objFso.GetBaseName(checkboxesChecked[i]) + '\\split_script.vbs ' + checkboxesChecked[i] + ' ' + objFso.GetFileName(checkboxesChecked[i]) + ' 99999',1,false)
+					runCscript (arg00, arg01, arg02, arg03);
+				}
+			}				
+				//sleepingVB();
+
+		}
+	}
+
+	function createScriptFile(scriptParentFolder) {
+		scriptFile = objFso.CreateTextFile( './' + scriptParentFolder + '/split_script.vbs',true);
+		scriptFile.writeline('Set objArgs = WScript.Arguments')
+		scriptFile.writeline('fileFullFolder = objArgs(0)')
+		scriptFile.writeline('logFileName = objArgs(1)')
+		scriptFile.writeline('linesCounts = objArgs(2)')
+		scriptFile.writeline('Public resultName')
+		scriptFile.writeline('class filingName')
+		scriptFile.writeline('public name')
+		scriptFile.writeline('end class') 
+		scriptFile.writeline('Function resultNameNow ()')
+		scriptFile.writeline('dim m')
+		scriptFile.writeline('set m = new filingName')
+		scriptFile.writeline('If Len (month(now)) < 2 Then')
+		scriptFile.writeline('monthly = "0" & (month(now))')
+		scriptFile.writeline('Else')
+		scriptFile.writeline('monthly = (month(now))')
+		scriptFile.writeline('End If')
+		scriptFile.writeline('If Len (day(now)) < 2 Then')
+		scriptFile.writeline('dayly = "0" & (day(now))')
+		scriptFile.writeline('Else')
+		scriptFile.writeline('dayly = (day(now))')
+		scriptFile.writeline('End If')
+		scriptFile.writeline('If Len (hour(now)) < 2 Then')
+		scriptFile.writeline('hourly = "0" & (hour(now))')
+		scriptFile.writeline('Else')
+		scriptFile.writeline('hourly = (hour(now))')
+		scriptFile.writeline('End If')
+		scriptFile.writeline('If Len (minute(now)) < 2 Then')
+		scriptFile.writeline('minutely = "0" & (minute(now))')
+		scriptFile.writeline('Else')
+		scriptFile.writeline('minutely = (minute(now))')
+		scriptFile.writeline('End If')
+		scriptFile.writeline('If Len (second(now)) < 2 Then')
+		scriptFile.writeline('secondly = "0" & (second(now))')
+		scriptFile.writeline('Else')
+		scriptFile.writeline('secondly = (second(now))')
+		scriptFile.writeline('End If')
+		scriptFile.writeline('m.name =  year(now) & monthly & dayly & "_" & hourly & minutely & secondly')
+		scriptFile.writeline('set resultNameNow = m')
+		scriptFile.writeline('End Function')
+		scriptFile.writeline('Dim objShell, objFS')
+		scriptFile.writeline('Const ForReading = 1, ForWriting = 2, ForAppending = 8, OpenAsDefault = -2, FailIfNotExist = 0')
+		scriptFile.writeline('Set objFso = CreateObject("Scripting.FileSystemObject")')
+		scriptFile.writeline('sTempFile = objFso.GetTempName')
+		scriptFile.writeline('folderOfFiles = objFso.GetBaseName(fileFullFolder)')
+		scriptFile.writeline('Set fFile = objFso.OpenTextFile("./" & folderOfFiles & "/" & sTempFile, ForAppending, True, OpenAsDefault)')
+		scriptFile.writeline('Set fsSize = objFso.GetFile(fileFullFolder)')
+		scriptFile.writeline('Set objTextFile = objFso.OpenTextFile (fileFullFolder, ForReading, False, OpenAsDefault)')
+		scriptFile.writeline('Do Until objTextFile.AtEndOfStream')
+		scriptFile.writeline('If fsSize.Size < 180000000 Then')
+		scriptFile.writeline('strLine = objTextFile.ReadAll')
+		scriptFile.writeline('fFile.Write strLine')
+		scriptFile.writeline('Else')
+		scriptFile.writeline('strLine = objTextFile.ReadLine')
+		scriptFile.writeline('fFile.Writeline strLine')
+		scriptFile.writeline('End If')
+		scriptFile.writeline('Loop')
+		scriptFile.writeline('objTextFile.close')
+		scriptFile.writeline('fFile.close')
+		scriptFile.writeline('strLine = ""')
+		scriptFile.writeline('Set objTextFile = objFso.OpenTextFile ("./" & folderOfFiles & "/" & sTempFile, ForReading, False, OpenAsDefault)')
+		scriptFile.writeline('Counter = 0')
+		scriptFile.writeline('fileOutputCount = 0')
+		scriptFile.writeline('Set objOutTextFile = Nothing')
+		scriptFile.writeline('Do Until objTextFile.AtEndOfStream')
+		scriptFile.writeline('If Counter = 0 Or Counter = linesCounts/1 Then')
+		scriptFile.writeline('Counter = 0')
+		scriptFile.writeline('fileOutputCount = fileOutputCount + 1')
+		scriptFile.writeline('If Not objOutTextFile is Nothing then objOutTextFile.Close')
+		scriptFile.writeline('resultRunFile = resultNameNow.name')
+		scriptFile.writeline('Set objOutTextFile = objFSO.OpenTextFile("./" & folderOfFiles & "/" & logFileName & "_" & resultRunFile & ".txt", ForAppending, True)')
+		scriptFile.writeline('End If')
+		scriptFile.writeline('strNextLine = objTextFile.Readline')
+		scriptFile.writeline('objOutTextFile.WriteLine(strNextLine)')
+		scriptFile.writeline('Counter = Counter + 1')
+		scriptFile.writeline('Loop')
+		scriptFile.writeline('objOutTextFile.close')
+		scriptFile.writeline('objTextFile.close')
+		scriptFile.writeline('strNextLine = ""')
+		scriptFile.writeline('objFso.DeleteFile "./" & folderOfFiles & "/" & sTempFile')
+		scriptFile.writeline('strScript = Wscript.ScriptFullName')
+		scriptFile.writeline('objFSO.DeleteFile(strScript)')
+		scriptFile.Close();
+	}
+	
+</script>
+
+<SCRIPT Language="VBScript">
+Public resultName
+Const ForReading = 1, ForWriting = 2, ForAppending = 8, OpenAsDefault = -2, FailIfNotExist = 0
+Sub Window_Onload
+	self.Focus()
+	self.ResizeTo 610,400
+	window.document.getElementById("splittingButton").style.visibility ="hidden" 
+End Sub
+Sub RunReload
+    Location.Reload(True)
+End Sub
+Function sleepingVB()	
+	Set oShell = CreateObject("WScript.Shell")
+	cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+	oShell.Run cmd,0,1	
+	Set oShell = Nothing
+End Function
+Function runCscript (vbAr00, vbAr01, vbAr02, vbAr03)
+	Set oShell = CreateObject("WScript.Shell")
+	cmd = "%COMSPEC% /c cscript .\" & vbAr00 & "\split_script.vbs " & vbAr01 & " " & vbAr02 & " " & vbAr03
+	oShell.Run cmd,7,false	
+	cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+	oShell.Run cmd,0,1		
+	Set oShell = Nothing
+End Function
+Function vbPOPer()
+	Inputbox = msgbox("Please confirm to proceed?",4,"DTL ISCS Text File Split")
+	If what = 6 Then msgbox "go" End If
+	If what = 7 Then msgbox "no go" End If
+End Function
+
+Function LogOff()
+		Dim objWMIService, objProcess, colProcess
+		Dim strComputer, strProcessKill 
+		strComputer = "."
+		strProcessKill = "'mshta.exe'"
+		Set objWMIService = GetObject("winmgmts:{impersonationLevel=impersonate}!\\" & strComputer & "\root\cimv2") 
+		Set colProcess = objWMIService.ExecQuery ("Select * from Win32_Process Where Name = " & strProcessKill )
+		For Each objProcess in colProcess
+			objProcess.Terminate()
+		Next 
+		WScript.Quit 
+	window.close
+End Function
+Sub ChooseSubfolder
+	'DataArea.InnerHtml = ""
+	Dim WshShell
+	Set WshShell = CreateObject("WScript.Shell")
+		strStartDir = WshShell.CurrentDirectory
+		Call PickFolder(strStartDir)
+	Set WshShell = Nothing
+End Sub
+Sub ChooseWholePC
+	'DataArea.InnerHtml = ""
+	strStartDir = 17
+	'strStartDir = 0
+	Call PickFolder(strStartDir)
+End Sub
+class filingName
+	public name
+end class 
+Function resultNameNow ()
+	dim m
+	set m = new filingName
+	If Len (month(now)) < 2 Then
+		monthly = "0" & (month(now))
+	Else
+		monthly = (month(now))
+	End If
+
+	If Len (day(now)) < 2 Then
+		dayly = "0" & (day(now))
+	Else
+		dayly = (day(now))
+	End If
+
+	If Len (hour(now)) < 2 Then
+		hourly = "0" & (hour(now))
+	Else
+		hourly = (hour(now))
+	End If
+
+	If Len (minute(now)) < 2 Then
+		minutely = "0" & (minute(now))
+	Else
+		minutely = (minute(now))
+	End If
+
+	If Len (second(now)) < 2 Then
+		secondly = "0" & (second(now))
+	Else
+		secondly = (second(now))
+	End If
+	m.name = "Logfile_Split_" & year(now) & monthly & dayly & "_" & hourly & minutely & secondly
+	set resultNameNow = m
+End Function
+
+Function PickFolder(strStartDir) 'Open the browse folder window
+	Dim objShell, objFS
+	Set objShell = CreateObject("Shell.Application")
+	Set objFS = objShell.BrowseForFolder(0, "Choose the folder where the files are to be split.", 0, strStartDir)
+		If (Not objFS Is Nothing) Then
+			objPath = objFS.Items.Item.path
+				If Instr (objPath, "::") > 0 Then
+					msgbox ("Please select a folder.")
+					Location.Reload(True)
+					Exit Function
+				End If 
+			Call ListFilesJSs(objPath)
+		ElseIf Len(TypeName(objFS)) > 5 Then
+			Location.Reload(True)
+			Exit Function		
+		End If
+	Set objFS = Nothing
+	Set objShell = Nothing
+End Function
+
+Function parse2TempFile(objFile, sTempFile) 'Reading each list files into tmp file.	
+	Dim fFile, objTextFile, fsSize, strLine
+	Set objFso = CreateObject("Scripting.FileSystemObject")
+	Set fFile = objFso.OpenTextFile("./" & sTempFile, ForAppending, True, OpenAsDefault)	
+	Set objTextFile = objFso.OpenTextFile (objFile, ForReading, False,OpenAsDefault)
+	Set fsSize = objFso.GetFile(objFile)
+	Do Until objTextFile.AtEndOfStream
+				Set oShell = CreateObject("WScript.Shell")
+				cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+				oShell.Run cmd,0,1	
+				'sTemp = oShell.ExpandEnvironmentStrings("%TEMP%")
+				DataArea.InnerHtml = "Temp file: " & sTempFile & "<br>Reading " & fsSize.name & " and writing to temp file"
+				cmd = "%COMSPEC% /c ping -n 1 127.0.0.1>nul"
+				oShell.Run cmd,0,1	
+				Set oShell = Nothing
+		If fsSize.Size < 180000000 Then					
+			strLine = objTextFile.ReadAll
+			fFile.Write strLine
+		Else
+			strLine = objTextFile.ReadLine
+			fFile.Writeline strLine							
+		End If
+	Loop
+	objTextFile.close
+	fFile.close
+	Set fFile = Nothing
+	Set objTextFile = Nothing
+	Set fsSize = Nothing
+	Set strLine = Nothing
+	Set objFso = Nothing	
+End Function
+
+
+
+
+
+</SCRIPT>
+
+
+
+<body style="background-color:#42f4c8;">
+<form name="linesPerFile">
+Split files by number of  <input type="text" id="fLineName" value="999999" style="background-color:yellow;width:100px;">  lines each.
+</form>
+Browse to the folder of text-readable file to be split.
+<br>
+<input type = "button" name="goSubFolder" value = "Browse Subfolder" style="width:120px;height:25px" onClick="vbscript:ChooseSubfolder" title="Select folder where text readable file is kept. All files will be merge as one text pool."> 
+<input type = "button" name="goFullFolder" value = "Browse Whole PC" style="width:120px;height:25px" onClick="vbscript:ChooseWholePC" title="Select folder where text readable file is kept. All files will be merge as one text pool."> 
+<br>
+<input type="button" style="width:120px;height:25px" value="Quit" onClick="vbscript:Logoff()" title="Close this window.">
+<input type="button" name="resetGlowWindow" style="width:120px;height:25px" value="Reset" onClick="vbscript:RunReload()" title="Reset this window.">
+<br>
+<form name='checkboxTISFile'>
+<div id='fileListJS' > </div>
+</form>
+<input type="button" name="splittingButton" style="width:120px;height:25px" value="Split Files" onClick="javascript:checkboxParser()" title="Split the selected file.">
+</body>
+</html>
